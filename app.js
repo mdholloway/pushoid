@@ -12,6 +12,7 @@ const packageInfo = require('./package.json');
 const yaml = require('js-yaml');
 const addShutdown = require('http-shutdown');
 const path = require('path');
+const cassandra = require('cassandra-driver');
 
 /**
  * Creates an express app and initialises it
@@ -127,6 +128,12 @@ function initApp(options) {
     app.use(bodyParser.json({ limit: app.conf.max_body_size || '100kb' }));
     // use the application/x-www-form-urlencoded parser
     app.use(bodyParser.urlencoded({ extended: true }));
+
+    app.dbClient = new cassandra.Client({
+        contactPoints: app.conf.datastore.hosts,
+        localDataCenter: app.conf.datastore.local_dc,
+        keyspace: app.conf.datastore.keyspace
+    });
 
     return BBPromise.resolve(app);
 

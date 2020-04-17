@@ -10,3 +10,6 @@ npm-debug.log
 package-lock.json
 
 .eslintcache
+
+lib/subscriptions.js
+routes/subscriptions.js
