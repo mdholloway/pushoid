@@ -1,10 +1,11 @@
 import { Client } from 'cassandra-driver';
 import { v4 as uuidv4 } from 'uuid';
+import { HTTPError } from './util';
 
 enum Protocol {
-    FCM = 'fcm',
-    APNS = 'apns',
-    Web = 'web'
+    'fcm',
+    'apns',
+    'web'
 }
 
 export class NewSubscription {
@@ -13,6 +14,12 @@ export class NewSubscription {
     lang?: string;
     badge?: bigint;
     constructor(token: string, protocol: Protocol, lang?: string, badge?: bigint) {
+        if (!token) {
+            throwBadRequestError("'token' field required");
+        }
+        if (!(protocol in Protocol)) {
+            throwBadRequestError(`protocol ${protocol} not recognized`);
+        }
         this.token = token;
         this.protocol = protocol;
         this.lang = lang;
@@ -45,7 +52,7 @@ export async function insert(dbClient: Client, subscription: NewSubscription): P
 }
 
 export async function update(dbClient: Client, subscription: Subscription): Promise<void> {
-    let query = 'UPDATE subscribers SET updated = ?';
+    let query = 'UPDATE subscriptions SET updated = ?';
     const params: any[] = [ Date.now() ];
     if (subscription.token) {
         query += ', token = ?';
@@ -59,12 +66,21 @@ export async function update(dbClient: Client, subscription: Subscription): Prom
         query += ', badge = ?';
         params.push(subscription.badge);
     }
-    query += 'WHERE uuid = ?';
+    query += ' WHERE uuid = ? IF EXISTS';
     params.push(subscription.uuid);
-    await dbClient.execute(query, params, { prepare: true })
+    await dbClient.execute(query, params, { prepare: true });
 }
 
 export async function remove(dbClient: Client, uuid: string): Promise<void> {
     const query = 'DELETE FROM subscriptions WHERE uuid = ?';
     await dbClient.execute(query, [ uuid ], { prepare: true });
+}
+
+function throwBadRequestError(detail: string): void {
+    throw new HTTPError({
+        status: 400,
+        type: 'bad_request',
+        title: 'Bad request',
+        detail
+    });
 }

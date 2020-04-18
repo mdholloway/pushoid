@@ -7,17 +7,17 @@ let app;
 router.post('/add', (req, res) => {
     const body = req.body;
     const subscription = new lib.NewSubscription(body.token, body.protocol, body.lang, body.badge);
-    return lib.insert(app.dbClient, subscription).then(uuid => res.json({ uuid }))
+    return lib.insert(app.dbClient, subscription).then(uuid => res.json({ uuid }));
 });
 
-router.post('/{uuid}', (req, res) => {
+router.post('/:uuid', (req, res) => {
     const body = req.body;
     const subscription = new lib.Subscription(req.params.uuid, body.token, body.lang, body.badge);
     return lib.update(app.dbClient, subscription).then(() => res.send());
 });
 
-router.delete('/{uuid}', (req, res) => {
-    return lib.remove(app.dbClient, req.params.uuid).then(() => res.end())
+router.delete('/:uuid', (req, res) => {
+    return lib.remove(app.dbClient, req.params.uuid).then(() => res.send());
 });
 
 module.exports = (appObj) => {
